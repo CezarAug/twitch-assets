@@ -58,7 +58,7 @@ window.addEventListener('onEventReceived', function (obj) {
             document.getElementById("joke_content").innerHTML = jokes[Math.floor(Math.random()*jokes.length)];  
             document.getElementById("pave_picture").src= 'https://c.tenor.com/HzOKOjVwjSIAAAAC/prassometro-pracometro.gif';
             playAudio(audio, volume);
-            setTimeout(hideJoke, 30000);
+            setTimeout(hideJoke, 15000);
         }
     }
 });
