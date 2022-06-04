@@ -14,7 +14,8 @@ let eventsLimit = 5,
     textOrder = "nameFirst",
     minCheer = 0,
     audio = '',
-    volume = '';
+    volume = '',
+    jokes = [];
 
 let userCurrency,
     totalEvents = 0;
@@ -24,6 +25,11 @@ function playAudio(sound, volume) {
     audio.volume = volume * .01;
     audio.play();
     return audio.duration;
+}
+
+function hideJoke() {
+    document.getElementById("joke_content").innerHTML = '';
+    document.getElementById("pave_picture").src= '';
 }
 
 window.addEventListener('onEventReceived', function (obj) {
@@ -36,58 +42,23 @@ window.addEventListener('onEventReceived', function (obj) {
     const listener = obj.detail.listener.split("-")[0];
     const event = obj.detail.event;
 
-    if (listener === 'follower') {
-        if (includeFollowers) {
-            addEvent('follower', 'Follower', event.name);
-        }
-    } else if (listener === 'redemption') {
-        if (includeRedemptions) {
-            addEvent('redemption', 'Redeemed', event.name);
-        }
-    } else if (listener === 'subscriber') {
-        if (includeSubs) {
-            if (event.gifted) {
-                addEvent('sub', `Sub gift`, event.name);
-            } else {
-                addEvent('sub', `Sub X${event.amount}`, event.name);
-            }
-        }
-    } else if (listener === 'host') {
-
-        /**
-         * Puxar imagem do cazalbé (https://c.tenor.com/Q-klpMNKAXMAAAAC/prassometro-pracometro.gif)
-         * https://c.tenor.com/HzOKOjVwjSIAAAAC/prassometro-pracometro.gif
-         * Puxar lista de piadas e sortear uma
-         */
-        document.getElementById("pave_picture").src= 'https://c.tenor.com/HzOKOjVwjSIAAAAC/prassometro-pracometro.gif';
-        document.getElementById("joke_content").innerHTML= 'Qual é o rei dos queijos? O reiqueijão';
-        playAudio(audio, volume);
-
-        if (includeHosts && minHost <= event.amount) {
-            addEvent('host', `Host ${event.amount.toLocaleString()}`, event.name);
-        }
+    if (listener === 'host') {
+        console.log('host');
     } else if (listener === 'cheer') {
-        if (includeCheers && minCheer <= event.amount) {
-            addEvent('cheer', `${event.amount.toLocaleString()} Bits`, event.name);
-        }
-    } else if (listener === 'tip') {
-        if (includeTips && minTip <= event.amount) {
-            if (event.amount === parseInt(event.amount)) {
-                addEvent('tip', event.amount.toLocaleString(userLocale, {
-                    style: 'currency',
-                    minimumFractionDigits: 0,
-                    currency: userCurrency.code
-                }), event.name);
-            } else {
-                addEvent('tip', event.amount.toLocaleString(userLocale, {
-                    style: 'currency',
-                    currency: userCurrency.code
-                }), event.name);
-            }
-        }
-    } else if (listener === 'raid') {
-        if (includeRaids && minRaid <= event.amount) {
-            addEvent('raid', `Raid ${event.amount.toLocaleString()}`, event.name);
+        if (2 == event.amount) {
+            /**
+             * Puxar imagem do cazalbé (https://c.tenor.com/Q-klpMNKAXMAAAAC/prassometro-pracometro.gif)
+             * https://c.tenor.com/HzOKOjVwjSIAAAAC/prassometro-pracometro.gif
+             * Puxar lista de piadas e sortear uma
+             * 
+             * Pave JSON:
+             * https://raw.githubusercontent.com/CezarAug/twitch-assets/main/pave/pave.json
+             */
+
+            document.getElementById("joke_content").innerHTML = jokes[Math.floor(Math.random()*jokes.length)];  
+            document.getElementById("pave_picture").src= 'https://c.tenor.com/HzOKOjVwjSIAAAAC/prassometro-pracometro.gif';
+            playAudio(audio, volume);
+            setTimeout(hideJoke, 30000);
         }
     }
 });
@@ -118,55 +89,64 @@ window.addEventListener('onWidgetLoad', function (obj) {
     audio = fieldData.defaultSound;
     volume = fieldData.volumeSlider;
 
-    let eventIndex;
-    for (eventIndex = 0; eventIndex < recents.length; eventIndex++) {
-        const event = recents[eventIndex];
+    // Initializing Joke list
+    fetch('https://raw.githubusercontent.com/CezarAug/twitch-assets/main/pave/pave.json', {
+        method: 'GET'
+    }).then((response) => response.json())
+    //Then with the data from the response in JSON...
+    .then((data) => {
+        jokes = data.piadasPave;
+    });
 
-        if (event.type === 'follower') {
-            if (includeFollowers) {
-                addEvent('follower', 'Follower', event.name);
-            }
-        } else if (event.type === 'redemption') {
-            if (includeRedemptions) {
-                addEvent('redemption', 'Redeemed', event.name);
-            }
-        } else if (event.type === 'subscriber') {
-            if (!includeSubs) continue;
-            if (event.amount === 'gift') {
-                addEvent('sub', `Sub gift`, event.name);
-            } else {
-                addEvent('sub', `Sub X${event.amount}`, event.name);
-            }
+    // let eventIndex;
+    // for (eventIndex = 0; eventIndex < recents.length; eventIndex++) {
+    //     const event = recents[eventIndex];
 
-        } else if (event.type === 'host') {
-            if (includeHosts && minHost <= event.amount) {
-                addEvent('host', `Host ${event.amount.toLocaleString()}`, event.name);
-            }
-        } else if (event.type === 'cheer') {
-            if (includeCheers && minCheer <= event.amount) {
-                addEvent('cheer', `${event.amount.toLocaleString()} Bits`, event.name);
-            }
-        } else if (event.type === 'tip') {
-            if (includeTips && minTip <= event.amount) {
-                if (event.amount === parseInt(event.amount)) {
-                    addEvent('tip', event.amount.toLocaleString(userLocale, {
-                        style: 'currency',
-                        minimumFractionDigits: 0,
-                        currency: userCurrency.code
-                    }), event.name);
-                } else {
-                    addEvent('tip', event.amount.toLocaleString(userLocale, {
-                        style: 'currency',
-                        currency: userCurrency.code
-                    }), event.name);
-                }
-            }
-        } else if (event.type === 'raid') {
-            if (includeRaids && minRaid <= event.amount) {
-                addEvent('raid', `Raid ${event.amount.toLocaleString()}`, event.name);
-            }
-        }
-    }
+    //     if (event.type === 'follower') {
+    //         if (includeFollowers) {
+    //             addEvent('follower', 'Follower', event.name);
+    //         }
+    //     } else if (event.type === 'redemption') {
+    //         if (includeRedemptions) {
+    //             addEvent('redemption', 'Redeemed', event.name);
+    //         }
+    //     } else if (event.type === 'subscriber') {
+    //         if (!includeSubs) continue;
+    //         if (event.amount === 'gift') {
+    //             addEvent('sub', `Sub gift`, event.name);
+    //         } else {
+    //             addEvent('sub', `Sub X${event.amount}`, event.name);
+    //         }
+
+    //     } else if (event.type === 'host') {
+    //         if (includeHosts && minHost <= event.amount) {
+    //             addEvent('host', `Host ${event.amount.toLocaleString()}`, event.name);
+    //         }
+    //     } else if (event.type === 'cheer') {
+    //         if (includeCheers && minCheer <= event.amount) {
+    //             addEvent('cheer', `${event.amount.toLocaleString()} Bits`, event.name);
+    //         }
+    //     } else if (event.type === 'tip') {
+    //         if (includeTips && minTip <= event.amount) {
+    //             if (event.amount === parseInt(event.amount)) {
+    //                 addEvent('tip', event.amount.toLocaleString(userLocale, {
+    //                     style: 'currency',
+    //                     minimumFractionDigits: 0,
+    //                     currency: userCurrency.code
+    //                 }), event.name);
+    //             } else {
+    //                 addEvent('tip', event.amount.toLocaleString(userLocale, {
+    //                     style: 'currency',
+    //                     currency: userCurrency.code
+    //                 }), event.name);
+    //             }
+    //         }
+    //     } else if (event.type === 'raid') {
+    //         if (includeRaids && minRaid <= event.amount) {
+    //             addEvent('raid', `Raid ${event.amount.toLocaleString()}`, event.name);
+    //         }
+    //     }
+    // }
 });
 
 
